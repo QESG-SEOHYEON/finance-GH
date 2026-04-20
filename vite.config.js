@@ -7,8 +7,10 @@ import { VitePWA } from "vite-plugin-pwa";
 const repoName = process.env.GITHUB_REPOSITORY?.split("/")[1];
 const base = process.env.BASE_PATH || (repoName ? `/${repoName}/` : "./");
 
-const APP_NAME = "GH 재무 캘린더";
-const APP_SHORT = "GH Finance";
+// 설치 후 OS에 표시되는 기본 이름 (사용자가 온보딩에서 입력한 대시보드 제목은
+// 실행 중 브라우저 탭/문서 타이틀에 동적으로 반영됨)
+const APP_NAME = "자산관리 앱";
+const APP_SHORT = "자산관리";
 
 export default defineConfig({
   base,
