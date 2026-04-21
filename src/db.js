@@ -321,3 +321,32 @@ export async function getExpectedIncome(year, month) {
 export async function setExpectedIncome(year, month, map) {
   await db.settings.put({ id: `expected-income-${year}-${month}`, value: map });
 }
+
+// ---------- 월별 여윳자금 (즉시 인출 가능 현금 잔고) ----------
+export async function getCashBalance(year, month) {
+  const row = await db.settings.get(`cash-balance-${year}-${month}`);
+  return row?.value;
+}
+export async function setCashBalance(year, month, amount) {
+  if (amount === null || amount === "" || amount === undefined) {
+    await db.settings.delete(`cash-balance-${year}-${month}`);
+  } else {
+    await db.settings.put({
+      id: `cash-balance-${year}-${month}`,
+      value: { amount: Number(amount), updatedAt: new Date() }
+    });
+  }
+}
+// 여윳자금 히스토리 (차트용 — 현재 월부터 역순으로 N개월)
+export async function getCashBalanceHistory(months = 12) {
+  const now = new Date();
+  const results = [];
+  let y = now.getFullYear(), m = now.getMonth() + 1;
+  for (let i = 0; i < months; i++) {
+    const row = await db.settings.get(`cash-balance-${y}-${m}`);
+    results.unshift({ year: y, month: m, label: `${y}.${String(m).padStart(2, "0")}`, amount: row?.value?.amount ?? null });
+    m--;
+    if (m < 1) { m = 12; y--; }
+  }
+  return results;
+}
