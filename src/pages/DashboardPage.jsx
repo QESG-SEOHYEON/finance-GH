@@ -7,8 +7,7 @@ import {
   getCustomGoals, setCustomGoals,
   getCustomCheckpoints, setCustomCheckpoints,
   getMonthSchedule,
-  getUserProfile, mergeProfile,
-  getCashBalance, setCashBalance
+  getUserProfile, mergeProfile
 } from "../db.js";
 import { fmt, fmtWon, getTasksForMonth } from "../schedule.js";
 import { currentPhaseFrom, getUserPhases } from "../lib/phase.js";
@@ -50,16 +49,6 @@ export default function DashboardPage() {
 
   const dbProfile = useLiveQuery(() => getUserProfile(), [], null);
   const profile = mergeProfile(dbProfile);
-
-  // 여윳자금 (현재 월 + 지난 달)
-  const cashNow = useLiveQuery(() => getCashBalance(year, month), [year, month], null);
-  const cashPrev = useLiveQuery(() => {
-    const pm = month === 1 ? 12 : month - 1;
-    const py = month === 1 ? year - 1 : year;
-    return getCashBalance(py, pm);
-  }, [year, month], null);
-  const [editCash, setEditCash] = useState(false);
-  const [cashDraft, setCashDraft] = useState("");
 
   const [netWorth, setNW] = useState(profile.currentNetWorth);
   const [editNW, setEditNW] = useState(false);
@@ -377,71 +366,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* 4 stat cards stacked vertically */}
+      {/* 3 stat cards stacked vertically */}
       <div style={{ display: "flex", flexDirection: "column", gap: 10, justifyContent: "space-between" }}>
-        {/* 여윳자금 (편집 가능) */}
-        <div
-          className="card-sm"
-          style={{
-            padding: "12px 14px",
-            cursor: "pointer",
-            background: "linear-gradient(135deg, #FFF5F3 0%, #FFF0EC 100%)",
-            borderColor: "#D4A0A0"
-          }}
-          onClick={() => {
-            if (editCash) return;
-            setCashDraft(cashNow?.amount != null ? String(cashNow.amount) : "");
-            setEditCash(true);
-          }}
-        >
-          <div style={{ fontSize: 10, color: R.textLight }}>💰 여윳자금 (즉시 인출)</div>
-          {editCash ? (
-            <div style={{ display: "flex", gap: 4, marginTop: 4 }} onClick={(e) => e.stopPropagation()}>
-              <input
-                type="number"
-                className="modal-input"
-                value={cashDraft}
-                onChange={(e) => setCashDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    setCashBalance(year, month, cashDraft === "" ? null : cashDraft);
-                    setEditCash(false);
-                  }
-                  if (e.key === "Escape") setEditCash(false);
-                }}
-                autoFocus
-                placeholder="잔고"
-                style={{ flex: 1, padding: "4px 8px", fontSize: 14, fontWeight: 700 }}
-              />
-              <button
-                className="btn btn-primary btn-sm"
-                onClick={() => { setCashBalance(year, month, cashDraft === "" ? null : cashDraft); setEditCash(false); }}
-                style={{ padding: "0 10px", height: 28 }}
-              >✓</button>
-            </div>
-          ) : (
-            <>
-              <div style={{ fontSize: 18, fontWeight: 800, marginTop: 2, letterSpacing: -0.5, color: cashNow?.amount != null ? R.textDark : R.textLight }}>
-                {cashNow?.amount != null ? fmt(cashNow.amount) : "탭하여 입력"}
-              </div>
-              {cashNow?.amount != null && cashPrev?.amount != null && (() => {
-                const diff = cashNow.amount - cashPrev.amount;
-                const color = diff > 0 ? R.mint : diff < 0 ? R.overBudget : R.textLight;
-                return (
-                  <div style={{ fontSize: 10, color, marginTop: 2, fontWeight: 600 }}>
-                    지난달 대비 {diff > 0 ? "+" : ""}{fmt(diff)}
-                  </div>
-                );
-              })()}
-              {cashNow?.amount == null && (
-                <div style={{ fontSize: 10, color: R.textLight, marginTop: 2 }}>
-                  월급 전날 잔고를 기록하세요
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
         <StatCard
           label="마통 상환"
           value={debtRemaining <= 0 ? "완납 ✓" : fmt(debtPaidTotal)}
